@@ -8,7 +8,7 @@ SCENARIO("Hash", "[getHash]"){
 	getHash("testfile.txt");
 	getHash("same_testfile.txt");
 	REQUIRE(hash_to_string("testfile.txt.hash") == hash_to_string("same_testfile.txt.hash"));
-	REQUIRE(!has_file_changed("testfile.txt");
+	REQUIRE(!has_file_changed("testfile.txt"));
 
 }
 
