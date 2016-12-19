@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include "client.hpp"
 #include <memory>
 #include <sstream>
@@ -50,7 +51,7 @@ std::string getHash(std::string name)
 	SHA256_Final(digest, &handler);
 	auto file_hash = name + ".hash";
 	FILE * out;
-	fout = fopen(file_hash.c_str(), "wb");
+	out = fopen(file_hash.c_str(), "wb");
 	fwrite(digest, 1, SHA256_DIGEST_LENGTH, out);
 	fclose(out);
 	fclose(input);
@@ -111,8 +112,9 @@ void encrypt(std::string name, std::string new_name) {
 void decrypt(std::string name, std::string new_name) {
 	int outlen, inlen;
 	FILE * input, *output;
-	fopen_s(&input, name.c_str(), "rb");
-	fopen_s(&output, new_name.c_str(), "wb");
+	
+	(&input, name.c_str(), "rb");
+	output = fopen(new_name.c_str(), "wb");
 	unsigned char inbuf[BUFSIZE], outbuf[BUFSIZE];
 	unsigned char key[32] = "1234567890098765432112345678900";
 	unsigned char iv[8] = "1234567";
