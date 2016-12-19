@@ -5,17 +5,17 @@
 #include "catch.hpp"
 
 SCENARIO("Hash", "[getHash]"){
-  getHash("testfile.txt");
-  getHash("same_testfile.txt");
-  REQUIRE(hash_to_string("testfile.txt.hash") == hash_to_string("same_testfile.txt.hash"));
+	getHash("testfile.txt");
+	getHash("same_testfile.txt");
+	REQUIRE(hash_to_string("testfile.txt.hash") == hash_to_string("same_testfile.txt.hash"));
 	REQUIRE(!has_file_changed("testfile.txt");
 
 }
 
 SCENARIO("crypt", "[crypt]"){
-  encrypt("testfile.txt", "en_testfile.txt");
-  decrypt("en_testfile.txt", "de_testfile.txt");
-  std::ifstream expected("testfile.txt");
+	encrypt("testfile.txt", "en_testfile.txt");
+	decrypt("en_testfile.txt", "de_testfile.txt");
+  	std::ifstream expected("testfile.txt");
 	std::ifstream output("de_testfile.txt");
 	std::string first, second;
 	
