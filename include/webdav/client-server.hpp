@@ -112,8 +112,7 @@ void encrypt(std::string name, std::string new_name) {
 void decrypt(std::string name, std::string new_name) {
 	int outlen, inlen;
 	FILE * input, *output;
-	
-	(&input, name.c_str(), "rb");
+	input = fopen(name.c_str(), "rb");
 	output = fopen(new_name.c_str(), "wb");
 	unsigned char inbuf[BUFSIZE], outbuf[BUFSIZE];
 	unsigned char key[32] = "1234567890098765432112345678900";
@@ -133,6 +132,7 @@ void decrypt(std::string name, std::string new_name) {
 	fclose(input);
 	fclose(output);
 }
+
 
 void decryptfile(std::string path)
 {
