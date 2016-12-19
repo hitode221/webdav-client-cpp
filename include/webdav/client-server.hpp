@@ -1,7 +1,6 @@
 #pragma once
 
-#include <fstream>
-#include <webdav/client.hpp>
+#include "client.hpp"
 #include <memory>
 #include <sstream>
 #include <map>
@@ -12,12 +11,12 @@
 #include <boost/filesystem.hpp>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
+
 #pragma comment(lib, "wldap32.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "ssleay32.lib")
 #pragma comment(lib, "libeay32.lib")
-
 
 #define BUFSIZE 1024
 
@@ -51,7 +50,7 @@ std::string getHash(std::string name)
 	SHA256_Final(digest, &handler);
 	auto file_hash = name + ".hash";
 	FILE * out;
-	out = fopen(file_hash.c_str(), "wb");
+	fout = fopen(file_hash.c_str(), "wb");
 	fwrite(digest, 1, SHA256_DIGEST_LENGTH, out);
 	fclose(out);
 	fclose(input);
@@ -68,6 +67,20 @@ std::string hash_to_string(std::string hash_file)
 	ss << buffer;
 	fclose(input);
 	return ss.str().substr(0, 32);
+}
+
+bool has_file_changed(std::string file)
+{
+	if(!boost::filesystem::is_regular_file(file + ".hash"))
+	{
+		getHash(file);
+		return true;
+	}
+	auto old_hash = hash_to_string(file + ".hash");
+	remove((file + ".hash").c_str());
+	getHash(file);
+	auto new_hash = hash_to_string(file + ".hash");
+	return (new_hash != old_hash);
 }
 
 void encrypt(std::string name, std::string new_name) {
@@ -98,8 +111,8 @@ void encrypt(std::string name, std::string new_name) {
 void decrypt(std::string name, std::string new_name) {
 	int outlen, inlen;
 	FILE * input, *output;
-	input = fopen(name.c_str(), "rb");
-	output = fopen(new_name.c_str(), "wb");
+	fopen_s(&input, name.c_str(), "rb");
+	fopen_s(&output, new_name.c_str(), "wb");
 	unsigned char inbuf[BUFSIZE], outbuf[BUFSIZE];
 	unsigned char key[32] = "1234567890098765432112345678900";
 	unsigned char iv[8] = "1234567";
@@ -140,7 +153,6 @@ void hash_files(std::string dir_name)
 
 void upload_to_disk(std::string dir_name, std::string disk_dir_name, std::unique_ptr<WebDAV::Client>& client)
 {
-	hash_files(dir_name);
 	for (boost::filesystem::directory_iterator it(dir_name), end; it != end; ++it) {
 		auto current_file = it->path();
 		if (boost::filesystem::is_directory(current_file)) {
@@ -148,25 +160,14 @@ void upload_to_disk(std::string dir_name, std::string disk_dir_name, std::unique
 			upload_to_disk(current_file.string(), disk_dir_name + "/" + current_file.leaf().string(), client);
 		}
 		else {
-			bool flag = false;
 			if (current_file.extension() != ".hash") {
-				if (client->check(disk_dir_name + "/" + current_file.leaf().string()))
+				if (has_file_changed(current_file.string()))
 				{
-					client->download(disk_dir_name + "/" + current_file.leaf().string() + ".hash", current_file.string() + ".hashd");
-					flag = (hash_to_string(current_file.string() + ".hash") == hash_to_string(current_file.string() + ".hashd"));
-					remove((current_file.string() + ".hashd").c_str());
-				};
-				if (!flag) {
 					auto crypt_file = current_file.string() + ".crpt";
 					encrypt(current_file.string(), crypt_file);
 					client->upload(disk_dir_name + "/" + current_file.leaf().string(), crypt_file);
 					remove(crypt_file.c_str());
 				}
-			}
-			else
-			{
-				client->upload(disk_dir_name + "/" + current_file.leaf().string(), current_file.string());
-				remove(current_file.string().c_str());
 			}
 		}
 	}
@@ -206,14 +207,13 @@ void download_from_disk(std::string dir, std::string disk_dir, std::unique_ptr<W
 		}
 		else
 		{
-			if (i.find(".hash") == -1) {
-				auto path = dir + "/" + disk_dir + "/" + i;
-				client->download(disk_dir + i, path + ".crpt");
-			}
+			auto path = dir + "/" + disk_dir + "/" + i;
+			client->download(disk_dir + i, path + ".crpt");
 		}
+		client->clean(disk_dir + i);
 	}
 	decrypt_threads(dir);
-	client->clean(disk_dir);
+	//client->clean("");
 }
 
 void upload_to_disk_root(std::string dir, std::unique_ptr<WebDAV::Client> & client)
