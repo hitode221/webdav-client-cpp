@@ -199,7 +199,7 @@ void decrypt_threads(std::string dir_name)
 
 void download_from_disk(std::string dir, std::string disk_dir, std::unique_ptr<WebDAV::Client> & client)
 {
-	boost::filesystem::create_directory(dir + "/" + disk_dir);
+	boost::filesystem::create_directories(dir + "/" + disk_dir);
 	auto files = client->list(disk_dir);
 	for (auto i : files)
 	{
@@ -226,4 +226,22 @@ void upload_to_disk_root(std::string dir, std::unique_ptr<WebDAV::Client> & clie
 void download_from_disk_root(std::string dir, std::unique_ptr<WebDAV::Client> & client)
 {
 	download_from_disk(dir, "", client);
+}
+
+void download_from_few_disks(std::string config_file)
+{
+	std::ifstream config(config_file);
+	std::string login, password, local_directory;
+	while(config)
+	{
+		config >> login >> password >> local_directory;
+		std::map<std::string, std::string> options =
+		{
+			{ "webdav_hostname", "https://webdav.yandex.ru" },
+			{ "webdav_login", login },
+			{ "webdav_password", password }
+		};
+		std::unique_ptr<WebDAV::Client> client(WebDAV::Client::Init(options));
+		download_from_disk_root(local_directory, client);
+	}
 }
