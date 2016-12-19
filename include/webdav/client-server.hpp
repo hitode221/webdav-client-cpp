@@ -186,7 +186,7 @@ void decrypt_threads(std::string dir_name)
 		{
 			if (current_file.extension() == ".crpt") {
 				auto new_name(current_file.string().substr(0, current_file.string().find(".crpt")));
-				ioService.post(boost::bind(decryptfile, new_name));
+				ioService.post(boost::bind(&decryptfile, new_name));
 			}
 		}
 	}
